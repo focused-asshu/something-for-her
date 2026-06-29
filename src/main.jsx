@@ -232,6 +232,101 @@ const Starfield = memo(function Starfield({ collapse = false }) {
     />
   );
 });
+
+const gardenScenes = {
+  "/": "origin",
+  "/landing": "landing",
+  "/stars": "stars",
+  "/chat": "chat",
+  "/confession": "confession",
+};
+
+const FloralSprig = memo(function FloralSprig({ variant = "sprig" }) {
+  return (
+    <svg
+      viewBox="0 0 260 320"
+      className={`floral-sprig floral-${variant}`}
+      aria-hidden="true"
+    >
+      <defs>
+        <radialGradient id={`petal-${variant}`} cx="50%" cy="42%" r="62%">
+          <stop offset="0" stopColor="#fff8ea" stopOpacity="0.9" />
+          <stop offset="0.54" stopColor="#efe6ff" stopOpacity="0.62" />
+          <stop offset="1" stopColor="#d8cff2" stopOpacity="0.08" />
+        </radialGradient>
+        <linearGradient id={`vine-${variant}`} x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0" stopColor="#fff4dd" stopOpacity="0.08" />
+          <stop offset="0.48" stopColor="#f6eefc" stopOpacity="0.34" />
+          <stop offset="1" stopColor="#cdbced" stopOpacity="0.04" />
+        </linearGradient>
+      </defs>
+      <path
+        className="vine-line"
+        d="M26 300C62 236 34 180 95 129C144 88 151 58 142 18"
+        fill="none"
+        stroke={`url(#vine-${variant})`}
+        strokeWidth="2.2"
+        strokeLinecap="round"
+      />
+      <path
+        className="vine-line secondary"
+        d="M72 228C102 214 125 188 135 154M98 128C78 118 58 100 46 78M132 88C170 82 196 66 219 35"
+        fill="none"
+        stroke={`url(#vine-${variant})`}
+        strokeWidth="1.35"
+        strokeLinecap="round"
+      />
+      {[
+        [88, 136, 1.0],
+        [138, 92, 0.82],
+        [56, 78, 0.62],
+        [184, 52, 0.72],
+        [70, 224, 0.5],
+      ].map(([x, y, scale], i) => (
+        <g key={i} className="moon-flower" transform={`translate(${x} ${y}) scale(${scale})`}>
+          <ellipse rx="8" ry="15" fill={`url(#petal-${variant})`} transform="rotate(0) translate(0 -10)" />
+          <ellipse rx="8" ry="15" fill={`url(#petal-${variant})`} transform="rotate(72) translate(0 -10)" />
+          <ellipse rx="8" ry="15" fill={`url(#petal-${variant})`} transform="rotate(144) translate(0 -10)" />
+          <ellipse rx="8" ry="15" fill={`url(#petal-${variant})`} transform="rotate(216) translate(0 -10)" />
+          <ellipse rx="8" ry="15" fill={`url(#petal-${variant})`} transform="rotate(288) translate(0 -10)" />
+          <circle r="3" fill="#ffe9bd" opacity="0.58" />
+        </g>
+      ))}
+      {[
+        [116, 176],
+        [154, 132],
+        [42, 258],
+        [204, 82],
+        [31, 112],
+        [178, 37],
+      ].map(([x, y], i) => (
+        <circle key={`d-${i}`} className="dew" cx={x} cy={y} r={i % 2 ? 1.7 : 2.25} />
+      ))}
+    </svg>
+  );
+});
+
+const CelestialGarden = memo(function CelestialGarden({ scene }) {
+  return (
+    <div className={`celestial-garden garden-${scene}`} aria-hidden="true">
+      <div className="galaxy-drift g-one" />
+      <div className="galaxy-drift g-two" />
+      <div className="pollen-field" />
+      <div className="petal petal-one" />
+      <div className="petal petal-two" />
+      <div className="floral-corner corner-a">
+        <FloralSprig variant={`${scene}-a`} />
+      </div>
+      <div className="floral-corner corner-b">
+        <FloralSprig variant={`${scene}-b`} />
+      </div>
+      <div className="floral-corner corner-c">
+        <FloralSprig variant={`${scene}-c`} />
+      </div>
+    </div>
+  );
+});
+
 const page = {
   initial: { opacity: 0, y: 24 },
   animate: { opacity: 1, y: 0 },
@@ -256,12 +351,16 @@ const Shell = memo(function Shell({
   const nav = useNavigate();
   const loc = useLocation();
   const first = loc.pathname === "/";
+  const scene = loc.pathname.startsWith("/story")
+    ? `story-${loc.pathname.split("/").pop() || "1"}`
+    : gardenScenes[loc.pathname] || "origin";
   return (
     <>
       <Starfield collapse={collapseStars} />
       <div className="ambient-orb one" />
       <div className="ambient-orb two" />
       <div className="moon-vignette" />
+      <CelestialGarden scene={scene} />
       <div className="chrome">
         {!first && (
           <button
