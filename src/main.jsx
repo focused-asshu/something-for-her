@@ -25,8 +25,8 @@ import "./styles.css";
 const rose = "#e8678a";
 const purple = "#9b7fe8";
 const warm = "#f5f0ff";
-const spring = { type: "spring", stiffness: 86, damping: 20, mass: 0.9 };
-const softSpring = { type: "spring", stiffness: 54, damping: 18, mass: 1.15 };
+const spring = { type: "spring", stiffness: 110, damping: 24, mass: 0.8 };
+const softSpring = { type: "spring", stiffness: 78, damping: 22, mass: 1 };
 const ease = [0.16, 1, 0.3, 1];
 
 function useSound(src, volume = 0.25) {
@@ -44,7 +44,7 @@ function useMotionSettings() {
     reduced: false,
   }));
   useEffect(() => {
-    const small = window.matchMedia("(max-width: 600px)");
+    const small = window.matchMedia("(max-width: 767px)");
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
     const update = () =>
       setSettings({ mobile: small.matches, reduced: reduced.matches });
@@ -77,7 +77,7 @@ const Starfield = memo(function Starfield({ collapse = false }) {
     let dpr = 1;
     let last = performance.now();
     let running = true;
-    const mobileQuery = window.matchMedia("(max-width: 600px)");
+    const mobileQuery = window.matchMedia("(max-width: 767px)");
     const reducedQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     const isMobile = () => mobileQuery.matches;
     const isReduced = () => reducedQuery.matches;
@@ -85,13 +85,11 @@ const Starfield = memo(function Starfield({ collapse = false }) {
     const seedStars = () => {
       const mobile = isMobile();
       const reduced = isReduced();
-      const areaCount = Math.round((w * h) / (mobile ? 11500 : 5400));
-      const count = reduced
-        ? mobile
-          ? 42
-          : 80
-        : mobile
-          ? Math.min(100, Math.max(70, areaCount))
+      const areaCount = Math.round((w * h) / (mobile ? 16000 : 5400));
+      const count = mobile
+        ? Math.min(60, Math.max(40, reduced ? 40 : areaCount))
+        : reduced
+          ? 80
           : Math.min(260, Math.max(130, areaCount));
       stars = Array.from({ length: count }, (_, i) => {
         const z = Math.random() ** 1.55;
@@ -137,10 +135,13 @@ const Starfield = memo(function Starfield({ collapse = false }) {
       const reduced = isReduced();
       const dt = Math.min(34, now - last);
       last = now;
-      pointer.current.x +=
-        (pointer.current.tx - pointer.current.x) * (mobile ? 0.025 : 0.045);
-      pointer.current.y +=
-        (pointer.current.ty - pointer.current.y) * (mobile ? 0.025 : 0.045);
+      if (mobile || reduced) {
+        pointer.current.x = 0;
+        pointer.current.y = 0;
+      } else {
+        pointer.current.x += (pointer.current.tx - pointer.current.x) * 0.045;
+        pointer.current.y += (pointer.current.ty - pointer.current.y) * 0.045;
+      }
       ctx.clearRect(0, 0, w, h);
       const nebula = ctx.createRadialGradient(
         w * 0.52,
@@ -306,9 +307,12 @@ const FloralSprig = memo(function FloralSprig({ variant = "sprig" }) {
   );
 });
 
-const CelestialGarden = memo(function CelestialGarden({ scene }) {
+const CelestialGarden = memo(function CelestialGarden({ scene, paused = false }) {
   return (
-    <div className={`celestial-garden garden-${scene}`} aria-hidden="true">
+    <div
+      className={`celestial-garden garden-${scene} ${paused ? "animations-paused" : ""}`}
+      aria-hidden="true"
+    >
       <div className="galaxy-drift g-one" />
       <div className="galaxy-drift g-two" />
       <div className="pollen-field" />
@@ -347,6 +351,7 @@ const Shell = memo(function Shell({
   musicOn,
   toggleMusic,
   collapseStars,
+  transitioning,
 }) {
   const nav = useNavigate();
   const loc = useLocation();
@@ -360,7 +365,7 @@ const Shell = memo(function Shell({
       <div className="ambient-orb one" />
       <div className="ambient-orb two" />
       <div className="moon-vignette" />
-      <CelestialGarden scene={scene} />
+      <CelestialGarden scene={scene} paused={transitioning} />
       <div className="chrome">
         {!first && (
           <button
@@ -436,7 +441,7 @@ const TextReveal = memo(function TextReveal({ text, className, delay = 0 }) {
   );
 });
 
-function Universe() {
+const Universe = memo(function Universe() {
   const nav = useNavigate();
   return (
     <motion.main {...page} className="screen">
@@ -466,8 +471,8 @@ function Universe() {
       </motion.div>
     </motion.main>
   );
-}
-function Landing() {
+});
+const Landing = memo(function Landing() {
   const nav = useNavigate();
   return (
     <motion.main {...page} className="screen">
@@ -491,13 +496,13 @@ function Landing() {
       </motion.div>
     </motion.main>
   );
-}
+});
 const chapters = [
   `I'm at one of the lowest points in my life right now, and somehow you came into it at exactly the right time. Maybe that's why every little conversation with you means so much to me. Honestly, I just want to tell you how much I appreciate you. Sometimes I wish you could see yourself through my eyes, because then you'd understand what I see in you and why talking to you makes me feel the way it does. At the same time, I'm scared. I'm scared that saying all this might ruin what we have, and that's the last thing I want. You've helped me more than you probably realize, and I genuinely don't want to lose you.`,
   `I don't just want someone to be with for a moment. I want someone who sees me grow over the next 10–12 years. Someone who knows the version of me that's confused today, and one day smiles because they watched me become the man I always wanted to be. I want to become someone reliable, dependable, and someone you can always count on — not because I have to, but because I'd genuinely want to be that person for you.`,
   `I know this might sound silly, but these words have been stuck in my head: 'I want you to want me. I need you to need me. I love you to love me. I'm begging you to beg me.' Maybe what I really mean is... I just want to matter to you the way you matter to me. And no matter where life takes us, I hope you know one thing: 'I can't promise to solve all your problems, but I promise you won't have to face them all alone.' Thank you for being here. You have no idea how much that has meant to me.`,
 ];
-function Story() {
+const Story = memo(function Story() {
   const { id } = useParams();
   const n = Math.min(Math.max(Number(id) || 1, 1), 3);
   const nav = useNavigate();
@@ -541,7 +546,7 @@ function Story() {
       </motion.div>
     </motion.main>
   );
-}
+});
 
 const starItems = [
   "your smile",
@@ -550,7 +555,7 @@ const starItems = [
   "your determination",
   "your presence",
 ];
-function Stars({ musicOn }) {
+const Stars = memo(function Stars({ musicOn }) {
   const nav = useNavigate();
   const [got, setGot] = useState([]);
   const { mobile, reduced } = useMotionSettings();
@@ -597,11 +602,6 @@ function Stars({ musicOn }) {
                 got.includes(i)
                   ? {
                       scale: [1, 1.9, 1.1],
-                      filter: [
-                        "drop-shadow(0 0 12px #ffd166)",
-                        "drop-shadow(0 0 42px #e8678a)",
-                        "drop-shadow(0 0 18px #ffd166)",
-                      ],
                     }
                   : undefined
               }
@@ -615,8 +615,8 @@ function Stars({ musicOn }) {
       </div>
       {got.length === 5 && (
         <motion.div
-          initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
-          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={softSpring}
           className="final"
         >
@@ -633,7 +633,7 @@ function Stars({ musicOn }) {
       )}
     </motion.main>
   );
-}
+});
 function Typing() {
   return (
     <span className="typing">
@@ -643,7 +643,7 @@ function Typing() {
     </span>
   );
 }
-function Chat() {
+const Chat = memo(function Chat() {
   const nav = useNavigate();
   const end = useRef(null);
   const [messages, setMessages] = useState([
@@ -746,7 +746,7 @@ function Chat() {
       </section>
     </motion.main>
   );
-}
+});
 function Confession() {
   const [answer, setAnswer] = useState(null);
   const { mobile, reduced } = useMotionSettings();
@@ -754,7 +754,7 @@ function Confession() {
     setAnswer("yes");
     if (!reduced)
       confetti({
-        particleCount: mobile ? 90 : 220,
+        particleCount: mobile ? 5 : 220,
         spread: mobile ? 82 : 120,
         origin: { y: 0.62 },
         colors: [rose, purple, "#fff6ee", "#ffd166"],
@@ -785,7 +785,6 @@ function Confession() {
         animate={{
           opacity: [0, 1, 1, 0],
           scale: [0.35, 1, 1.18, 0.82],
-          borderRadius: ["50%", "50%", "50%", "34%"],
         }}
         transition={{ duration: 7.4, times: [0, 0.22, 0.68, 1], ease }}
       />
@@ -802,24 +801,24 @@ function Confession() {
         ♥
       </motion.div>
       <motion.p
-        initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
-        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 8.2, duration: 1.45, ease }}
         className="confess"
       >
         In the most selfish way possible...
       </motion.p>
       <motion.p
-        initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
-        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 10.4, duration: 1.45, ease }}
         className="confess"
       >
         I hope no one admires you as much as I do.
       </motion.p>
       <motion.p
-        initial={{ opacity: 0, y: 22, filter: "blur(10px)" }}
-        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        initial={{ opacity: 0, y: 22 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 12.8, duration: 1.55, ease }}
         className="ask"
       >
@@ -873,13 +872,27 @@ function App() {
     return () => howl.stop();
   }, [musicOn, howl]);
   const collapseStars = loc.pathname === "/confession";
+  const [transitioning, setTransitioning] = useState(false);
+  useEffect(() => {
+    setTransitioning(true);
+    const id = window.setTimeout(() => setTransitioning(false), 360);
+    return () => window.clearTimeout(id);
+  }, [loc.pathname]);
+  useEffect(() => {
+    const syncHidden = () =>
+      document.documentElement.classList.toggle("page-hidden", document.hidden);
+    syncHidden();
+    document.addEventListener("visibilitychange", syncHidden);
+    return () => document.removeEventListener("visibilitychange", syncHidden);
+  }, []);
   return (
     <Shell
       musicOn={musicOn}
       toggleMusic={() => setMusicOn((v) => !v)}
       collapseStars={collapseStars}
+      transitioning={transitioning}
     >
-      <AnimatePresence mode="wait">
+      <AnimatePresence initial={false} mode="sync">
         <Routes location={loc} key={loc.pathname}>
           <Route path="/" element={<Universe />} />
           <Route path="/landing" element={<Landing />} />
