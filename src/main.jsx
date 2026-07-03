@@ -389,7 +389,12 @@ const Shell = memo(function Shell({
   );
 });
 
-const Button = memo(function Button({ children, onClick, className = "" }) {
+const Button = memo(function Button({
+  children,
+  onClick,
+  className = "",
+  disabled = false,
+}) {
   const { mobile, reduced } = useMotionSettings();
   return (
     <motion.button
@@ -397,6 +402,7 @@ const Button = memo(function Button({ children, onClick, className = "" }) {
       whileTap={{ scale: 0.965 }}
       transition={{ ...spring, duration: mobile ? 0.22 : 0.42 }}
       onClick={onClick}
+      disabled={disabled}
       className={`btn ${className}`}
     >
       {children}
@@ -749,9 +755,37 @@ const Chat = memo(function Chat() {
 });
 function Confession() {
   const [answer, setAnswer] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const submitted = useRef(false);
   const { mobile, reduced } = useMotionSettings();
-  function yes() {
-    setAnswer("yes");
+
+  const notifyDiscord = useCallback(async (choice) => {
+    if (submitted.current) return;
+    submitted.current = true;
+    setSubmitting(true);
+
+    try {
+      const response = await fetch("/api/discord-notification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          answer: choice,
+          timestamp: new Date().toLocaleString(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Discord notification failed with status ${response.status}`);
+      }
+    } catch (error) {
+      console.error("Failed to send Discord notification", error);
+    } finally {
+      setAnswer(choice);
+    }
+  }, []);
+
+  async function yes() {
+    if (submitted.current) return;
     if (!reduced)
       confetti({
         particleCount: mobile ? 5 : 220,
@@ -761,7 +795,13 @@ function Confession() {
         shapes: ["star", "circle"],
         scalar: mobile ? 0.75 : 1,
       });
+    await notifyDiscord("yes");
   }
+
+  async function no() {
+    await notifyDiscord("no");
+  }
+
   if (answer === "yes")
     return (
       <motion.main {...page} className="screen">
@@ -830,10 +870,10 @@ function Confession() {
         transition={{ delay: 14.2, duration: 1, ease }}
         className="choice"
       >
-        <Button className="yes" onClick={yes}>
+        <Button className="yes" onClick={yes} disabled={submitting}>
           yes ❤️
         </Button>
-        <button className="no" onClick={() => setAnswer("no")}>
+        <button className="no" onClick={no} disabled={submitting}>
           no
         </button>
       </motion.div>
