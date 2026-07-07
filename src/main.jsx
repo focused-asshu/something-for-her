@@ -857,17 +857,31 @@ function Confession() {
         I hope no one admires you as much as I do.
       </motion.p>
       <motion.p
-        initial={{ opacity: 0, y: 22 }}
+        initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 12.8, duration: 1.55, ease }}
-        className="ask"
+        transition={{ delay: 12.8, duration: 1.45, ease }}
+        className="confess"
       >
-        Will you go on a date with me?
+        Because if there's one thing my heart knows for certain...
+      </motion.p>
+      <motion.p className="ask" initial="hidden" animate="show">
+        {"Will you be my better half? ❤️".split(" ").map((word, i, words) => (
+          <React.Fragment key={`${word}-${i}`}>
+            <motion.span
+              variants={reveal}
+              custom={240 + i * 2.25}
+              style={{ display: "inline-block" }}
+            >
+              {word}
+            </motion.span>
+            {i < words.length - 1 ? " " : null}
+          </React.Fragment>
+        ))}
       </motion.p>
       <motion.div
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 14.2, duration: 1, ease }}
+        transition={{ delay: 17.15, duration: 1, ease }}
         className="choice"
       >
         <Button className="yes" onClick={yes} disabled={submitting}>
